@@ -6,7 +6,7 @@ Any input you have is most welcome, whether it's:
 - Asking a question
 - Any other sort of discussion
 
-For all of the above you can use [Github issues](https://github.com/albertopoljak/MC-Fart-Mic), when opening one
+For all of the above you can use [Github issues](https://github.com/albertopoljak/MC-Fart-Mic/issues), when opening one
 please take your time to make a proper title and detailed description.
 
 # Code contribution
@@ -22,4 +22,4 @@ Process is the standard one: you fork the repo, make changes to it and then open
 ## License
 Any contributions you make will be under the GPLv3 Software License.
 
-In short, when you submit code changes, your submissions are understood to be under the same [LICENSE.md](LICENSE.md) that covers this project.
+In short, when you submit code changes, your submissions are understood to be under the same [LICENSE.md](LICENSE) that covers this project.
