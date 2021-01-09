@@ -77,6 +77,18 @@ $ cd mc_fart_mic
 $ python main_menu.py
 ```
 
+## Supported audio formats
+
+Depends on your system multimedia backend:
+
+- Windows: [DirectShow](https://docs.microsoft.com/en-us/windows/win32/directshow/supported-formats-in-directshow?redirectedfrom=MSDN)
+- Linux: [gstreamer](https://gstreamer.freedesktop.org/features/)
+- MacOS:  [QuickTime](https://support.apple.com/en-us/HT201290)
+
+In short depends on your system, but formats that should be supported by all 3 are wav and mp3
+
+Best way to see if some format is supported is to try to add it and play it, if it doesn't play it isn't supported on your system.
+
 ## Performance
 
 The program is designed to run in the background without taking much CPU/RAM.
