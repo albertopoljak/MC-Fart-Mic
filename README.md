@@ -8,9 +8,9 @@ Idea is to use it in background while you're in voice chat and you can play meme
 
 ## Requirements
 
-Program itself is cross-platform and should be compatible with any systems PyQt5 supports:
+Program itself is cross-platform and should be compatible with:
 
-* Windows, Linux, UNIX, OS X (theoretically Android and iOS too but app was made with desktop in mind).
+* Windows, Linux, UNIX, OS X
 
 
 You need Python 3.5 or later.
