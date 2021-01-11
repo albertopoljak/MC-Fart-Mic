@@ -1,2 +1,2 @@
-pyinstaller
+auto-py-to-exe
 pyqt5-tools
