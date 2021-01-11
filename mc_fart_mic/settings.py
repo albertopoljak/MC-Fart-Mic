@@ -15,7 +15,6 @@ class SettingsUi(QWidget):
 
         all_options = PlayerPool().available_devices()
 
-        self.test_virtual_device.setIcon(qApp.style().standardIcon(QStyle.SP_MediaVolume))
         self.combo_box_virtual_device.addItems(all_options)
         self.combo_box_virtual_device.currentTextChanged.connect(self.on_virtual_device_combobox_changed)
         self.help_virtual_audio_device.setIcon(qApp.style().standardIcon(QStyle.SP_MessageBoxQuestion))
