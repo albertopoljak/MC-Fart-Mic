@@ -8,7 +8,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QCheckBox, QSlider, QComboBox
 
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class Config:

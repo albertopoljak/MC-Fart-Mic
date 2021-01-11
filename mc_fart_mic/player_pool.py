@@ -49,6 +49,10 @@ class PlayerPool(metaclass=Singleton):
 
         self._max_concurrent_sounds = new_max_concurrent_sounds
 
+    @property
+    def currently_playing_count(self) -> int:
+        return sum(1 for player in self._players if player.state() == QMediaPlayer.State.PlayingState)
+
     def _add_players(self, number: int):
         """
         Initialize and add number of players to cache.
