@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>250</height>
+    <height>202</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -44,12 +44,12 @@
     <rect>
      <x>20</x>
      <y>60</y>
-     <width>111</width>
+     <width>121</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>Sound file:</string>
+    <string>Sound file/directory:</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="sound_file_line_edit">
@@ -57,7 +57,7 @@
     <rect>
      <x>20</x>
      <y>80</y>
-     <width>331</width>
+     <width>371</width>
      <height>20</height>
     </rect>
    </property>
@@ -69,7 +69,7 @@
    <property name="geometry">
     <rect>
      <x>320</x>
-     <y>220</y>
+     <y>170</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -81,30 +81,14 @@
   <widget class="QPushButton" name="select_sound_file_button">
    <property name="geometry">
     <rect>
-     <x>360</x>
-     <y>80</y>
+     <x>320</x>
+     <y>110</y>
      <width>31</width>
      <height>23</height>
     </rect>
    </property>
    <property name="text">
     <string/>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_note">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>140</y>
-     <width>381</width>
-     <height>81</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Note: Depending on your system many more formats than just wav or mp3 could be supported. If you wish to pick any other format select &quot;All files&quot; when file select dialog opens. Be sure to test other formats, if they don't play they are not supported.</string>
-   </property>
-   <property name="wordWrap">
-    <bool>true</bool>
    </property>
   </widget>
   <widget class="QPushButton" name="button_clear_hotkey_entry">
@@ -133,26 +117,26 @@
     <string>Listen</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="check_copy_sound_file">
+  <widget class="QPushButton" name="select_sound_directory_button">
    <property name="geometry">
     <rect>
-     <x>50</x>
+     <x>360</x>
      <y>110</y>
-     <width>261</width>
-     <height>31</height>
+     <width>31</width>
+     <height>23</height>
     </rect>
    </property>
    <property name="text">
-    <string>Copy sound file to sounds directory</string>
+    <string/>
    </property>
   </widget>
-  <widget class="QPushButton" name="button_help_copy">
+  <widget class="QPushButton" name="help_select_file">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>111</y>
-     <width>25</width>
-     <height>25</height>
+     <x>280</x>
+     <y>110</y>
+     <width>31</width>
+     <height>23</height>
     </rect>
    </property>
    <property name="text">

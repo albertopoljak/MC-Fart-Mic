@@ -3,11 +3,8 @@ from PyQt5 import uic
 from PyQt5.QtCore import QTimer, QEventLoop, pyqtSlot
 from PyQt5.QtWidgets import QWidget, QFileDialog, qApp, QStyle
 
-from message_boxes import show_simple_warning_message, show_simple_info_message
-
-
-# Formats that are sure to be supported on all backends, depending on user OS many more might be supported.
-SUPPORTED_AUDIO_FORMATS = ("mp3", "wav")
+from constants import SURE_SUPPORTED_AUDIO_FORMATS, POSSIBLE_AUDIO_FORMATS
+from message_boxes import show_simple_info_message, show_simple_warning_message
 
 
 class HotkeyEntryUI(QWidget):
@@ -24,11 +21,14 @@ class HotkeyEntryUI(QWidget):
         self.button_listen_hotkey.clicked.connect(self.listen_hotkey)
         self.button_clear_hotkey_entry.clicked.connect(self.clear_hotkey_entry)
 
-        self.button_help_copy.setIcon(qApp.style().standardIcon(QStyle.SP_MessageBoxQuestion))
-        self.button_help_copy.clicked.connect(self.show_help_copy_sound_file)
+        self.help_select_file.setIcon(qApp.style().standardIcon(QStyle.SP_MessageBoxQuestion))
+        self.help_select_file.clicked.connect(self.show_help_select_file)
 
-        self.select_sound_file_button.setIcon(qApp.style().standardIcon(QStyle.SP_DirLinkIcon))
-        self.select_sound_file_button.clicked.connect(self.open_filename_dialog)
+        self.select_sound_file_button.setIcon(qApp.style().standardIcon(QStyle.SP_FileLinkIcon))
+        self.select_sound_file_button.clicked.connect(self.select_filename_dialog)
+
+        self.select_sound_directory_button.setIcon(qApp.style().standardIcon(QStyle.SP_DirLinkIcon))
+        self.select_sound_directory_button.clicked.connect(self.select_directory_dialog)
 
         self.button_save_hotkey.clicked.connect(self.save_hotkey)
 
@@ -56,28 +56,48 @@ class HotkeyEntryUI(QWidget):
         self.hotkey_line_edit.clear()
 
     @pyqtSlot()
-    def show_help_copy_sound_file(self):
+    def show_help_select_file(self):
         show_simple_info_message(
-            "If this box is checked then selected sound file will be copied to /sounds directory which can be "
-            "found in the same directory as this program.\nThis helps keeping all sound files in one place."
+            "When selecting a single file default filter is only .wav and .mp3 files "
+            "because those are supported on all systems.\n"
+            "However your system can and probably does support many more.\n"
+            "If you'd like to select some other audio file other than those 2 formats then change filter in the "
+            "explorer window to 'All sound files'\n"
+            "Be sure to test those other formats, if they don't play they are not supported on your system.\n\n"
+            "Same works with selecting directories, if some sound files inside are not supported "
+            "they will just not play."
         )
 
     @pyqtSlot()
-    def open_filename_dialog(self):
+    def select_filename_dialog(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
 
-        extensions = " ".join(f"*.{ext}" for ext in SUPPORTED_AUDIO_FORMATS)
+        sure_supported_extensions = " ".join(f"*.{ext}" for ext in SURE_SUPPORTED_AUDIO_FORMATS)
+        possible_supported_extensions = " ".join(f"*.{ext}" for ext in POSSIBLE_AUDIO_FORMATS)
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             caption="Select sound file",
             directory="",
-            filter=f"Sound Files ({extensions});;All Files (*)",
+            filter=(
+                f"Sure supported sound files ({sure_supported_extensions});;"
+                f"All sound files ({possible_supported_extensions})"
+                ),
             options=options
         )
 
         if file_path:
             self.sound_file_line_edit.setText(file_path)
+
+    @pyqtSlot()
+    def select_directory_dialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog | QFileDialog.ShowDirsOnly
+
+        directory_path = str(QFileDialog.getExistingDirectory(self, "Select Directory", options=options))
+
+        if directory_path:
+            self.sound_file_line_edit.setText(directory_path)
 
     def save_hotkey(self):
         if self.hotkey_line_edit.text() in ("", self.HOTKEY_TEXT_LISTEN_PLACEHOLDER):
