@@ -1,5 +1,6 @@
 import sys
 import json
+import random
 import logging
 import traceback
 from typing import Type
@@ -18,15 +19,10 @@ from settings import SettingsUi
 from labels import HoverEntryLabel
 from player_pool import PlayerPool
 from hotkey_entry import HotkeyEntryUI
-from constants import GITHUB_REPO_LINK, PROGRAM_VERSION
+from constants import GITHUB_REPO_LINK, PROGRAM_VERSION, POSSIBLE_AUDIO_FORMATS
 
 
-root_logger = logging.getLogger()
-root_logger.setLevel(logging.INFO)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(message)s")
-console = logging.StreamHandler(sys.stdout)
-console.setFormatter(formatter)
-root_logger.addHandler(console)
+logging.basicConfig(filename="log.txt", level=logging.INFO, format="%(asctime)s - %(levelname)s %(name)s - %(message)s")
 
 
 class HotkeyListenerThread(QtCore.QThread):
@@ -36,7 +32,6 @@ class HotkeyListenerThread(QtCore.QThread):
 
 
 class MainWindowUi(QMainWindow):
-    SOUND_PATH = Path("sounds")
     LAYOUTS_DIRECTORY = Path("layouts")
     PROFILES_DIRECTORY = Path("profiles")
     DEFAULT_PROFILE_NAME = "default"
@@ -116,7 +111,11 @@ class MainWindowUi(QMainWindow):
             with open(self.PROFILES_DIRECTORY / f"{profile_name}.json", "r") as file:
                 return json.load(file)
         except Exception:  # noqa PyBroadException
-            return message_boxes.show_simple_traceback_message(f"Can't load profile '{profile_name}'.")
+            if profile_name == self.DEFAULT_PROFILE_NAME:
+                # Hot-fix when app is initially opened there will be no profiles
+                return {}
+            else:
+                return message_boxes.show_simple_traceback_message(f"Can't load profile '{profile_name}'.")
 
     def save_profile_json(self, profile_name: str) -> None:
         """Save current profile data to json file."""
@@ -142,6 +141,7 @@ class MainWindowUi(QMainWindow):
         if not profile_name:
             return message_boxes.show_simple_warning_message("Can't create profile with empty name!")
 
+        PlayerPool().stop_all_playbacks()
         self.profile = {}
         self.combo_box_profile.insertItem(0, profile_name)
         self.combo_box_profile.setCurrentIndex(0)
@@ -166,8 +166,15 @@ class MainWindowUi(QMainWindow):
 
     @classmethod
     def play_sound(cls, sound_path: str):
+        path = Path(sound_path)
+        if path.is_dir():
+            files = [file for file in path.rglob("**/*") if file.is_file() and file.suffix in POSSIBLE_AUDIO_FORMATS]
+            random_sound = str(random.choice(files))
+            url = QtCore.QUrl.fromLocalFile(QtCore.QDir.current().absoluteFilePath(random_sound))
+        else:
+            url = QtCore.QUrl.fromLocalFile(QtCore.QDir.current().absoluteFilePath(sound_path))
+
         player = PlayerPool().get_player()
-        url = QtCore.QUrl.fromLocalFile(QtCore.QDir.current().absoluteFilePath(sound_path))
         content = QtMultimedia.QMediaContent(url)
         player.setMedia(content)
         player.play()
@@ -235,25 +242,26 @@ class MainWindowUi(QMainWindow):
             keyboard.add_hotkey(hotkey, self.play_sound, args=(sound_path,))
 
     def new_hotkey_entry(self, hotkey: str, sound_path: str):
-        cancel_adding = False
+        continue_adding = True
         if self.check_duplicate_hotkey(hotkey):
-            cancel_adding = message_boxes.show_simple_confirmation_message(
+            continue_adding = message_boxes.show_simple_confirmation_message(
                 "That hotkey is already registered.\n"
                 "If you add it you will have multiple files playing for single hotkey.\n"
                 "Continue adding?"
             )
         elif self.check_duplicate_path(sound_path):
-            cancel_adding = message_boxes.show_simple_confirmation_message(
+            continue_adding = message_boxes.show_simple_confirmation_message(
                 "That path is already registered.\n"
                 "If you add it you will have multiple hotkeys for the same path.\n"
                 "Continue adding?"
             )
 
-        if cancel_adding:
+        if not continue_adding:
             return
 
         self.add_hotkey_to_scrollbar(hotkey, sound_path)
         self.profile[hotkey] = sound_path
+        keyboard.add_hotkey(hotkey, self.play_sound, args=(sound_path,))
 
         # Auto save at end
         current_profile = self.combo_box_profile.currentText()
@@ -318,6 +326,12 @@ class MainWindowUi(QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindowUi()
-    app.exec_()
+    try:
+        # Make directory in case of pyinstaller or similar.
+        # Note that layouts should be packed in the bundle so we don't create that.
+        Path(MainWindowUi.PROFILES_DIRECTORY).mkdir(exist_ok=True)
+        app = QApplication(sys.argv)
+        window = MainWindowUi()
+        app.exec_()
+    except Exception as e:
+        logging.error(e)

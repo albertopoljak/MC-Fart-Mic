@@ -73,8 +73,8 @@ class HotkeyEntryUI(QWidget):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
 
-        sure_supported_extensions = " ".join(f"*.{ext}" for ext in SURE_SUPPORTED_AUDIO_FORMATS)
-        possible_supported_extensions = " ".join(f"*.{ext}" for ext in POSSIBLE_AUDIO_FORMATS)
+        sure_supported_extensions = " ".join(f"*{ext}" for ext in SURE_SUPPORTED_AUDIO_FORMATS)
+        possible_supported_extensions = " ".join(f"*{ext}" for ext in POSSIBLE_AUDIO_FORMATS)
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             caption="Select sound file",
