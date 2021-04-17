@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict
 from collections import deque
 
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaService, QAudioOutputSelectorControl
@@ -79,23 +79,32 @@ class PlayerPool(metaclass=Singleton):
         oldest = sorted(self._players, key=lambda _player: _player.duration() - _player.position(), reverse=True)[0]
         return oldest
 
-    def available_devices(self) -> List[str]:
+    def available_devices(self) -> Dict[str, str]:
         """
-        Get a list of all available audio output devices.
-        :return: list of strings where each string represent available audio output device identifier.
+        Get a dict of all available audio output devices.
+        :return: Dict where keys are strings representing available audio output device identifier and values represent
+        friendly name string of said device identifier. Example:
+        {'Default Device': '@device:cm:{E0F118E1-CB14-11D0-BD4E-11A0C900CE97}\\Default Device'}
         """
         # When changing device output the change is propagated across all cached players,
-        # so getting available outputs from any of them should always be the same.
-        return self._players[0].service().requestControl(self.AUDIO_OUTPUT_SELECTOR_CONTROL_STRING).availableOutputs()
+        # so getting available outputs from any of them should always be the same, thus selecting first player
+        # as at least one player will exist at all times.
+        selector = self._players[0].service().requestControl(self.AUDIO_OUTPUT_SELECTOR_CONTROL_STRING)
+        data = {}
+        for device_identifier in selector.availableOutputs():
+            data[selector.outputDescription(device_identifier)] = device_identifier
+        return data
 
-    def change_device(self, device_identifier: str):
+    def change_device(self, device_friendly_name: str):
         """
-        Change all cached players to play to specific audio output device based on passed device_identifier.
-        :param device_identifier: str audio device identifier
-        :raises ValueError: if device_identifier is not one of available devices
+        Change all cached players to play to specific audio output device based on passed device_friendly_name.
+        :param device_friendly_name: str audio device description (friendly name for device identifier)
+        :raises ValueError: if device_friendly_name is not one of available devices
         """
-        if device_identifier not in self.available_devices():
-            raise ValueError("Invalid device identifier.")
+        try:
+            device_identifier = self.available_devices()[device_friendly_name]
+        except KeyError as e:
+            raise ValueError(f"Invalid device selected: {e}")
 
         for player in self._players:
             scv: QMediaService = player.service()
