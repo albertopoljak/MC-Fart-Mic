@@ -38,7 +38,7 @@ class HotkeyEntryUI(QWidget):
 
         self._currently_listening_for_hotkey = True
         self.hotkey_line_edit.setText(self.HOTKEY_TEXT_LISTEN_PLACEHOLDER)
-        # If we don't sleep here the above line edit text does update on time
+        # If we don't sleep here the above line edit text doesn't update on time
         self.non_blocking_sleep(10)
 
         hotkey = keyboard.read_hotkey()
@@ -53,6 +53,8 @@ class HotkeyEntryUI(QWidget):
 
     @pyqtSlot()
     def clear_hotkey_entry(self):
+        # multiple calls to read_hotkey build upon previous entries, so we clear them here
+        keyboard.stash_state()
         self.hotkey_line_edit.clear()
 
     @pyqtSlot()
@@ -78,7 +80,6 @@ class HotkeyEntryUI(QWidget):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             caption="Select sound file",
-            directory="",
             filter=(
                 f"Sure supported sound files ({sure_supported_extensions});;"
                 f"All sound files ({possible_supported_extensions})"
