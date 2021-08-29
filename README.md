@@ -115,6 +115,18 @@ TODO
 
 Any sort of contribution/discussion is welcome - see the [CONTRIBUTING.md](CONTRIBUTING.md) file for details.
 
+
+#### Development notes
+
+Layout files are generated with Qt designer, to use first install development dependencies:
+
+    $ pipenv install --dev
+
+Then either run designer manually or run from premade script entry with:
+
+    $ pipenv run designer
+
+
 ## License
 
 This project is licensed under the GPLv3 License - see the [LICENSE.md](LICENSE.md) file for details.

@@ -7,11 +7,11 @@ from constants import SURE_SUPPORTED_AUDIO_FORMATS, POSSIBLE_AUDIO_FORMATS
 from message_boxes import show_simple_info_message, show_simple_warning_message
 
 
-class HotkeyEntryUI(QWidget):
+class AddHotkeyUI(QWidget):
     HOTKEY_TEXT_LISTEN_PLACEHOLDER = "press something on your keyboard"
 
     def __init__(self, main_menu):
-        super(HotkeyEntryUI, self).__init__()
+        super(AddHotkeyUI, self).__init__()
         uic.loadUi("layouts/add_hotkey.ui", self)
         self.setFixedSize(self.size())
 
