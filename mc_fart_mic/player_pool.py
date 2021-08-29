@@ -1,23 +1,15 @@
 from typing import Dict
 from collections import deque
 
-from PyQt5.QtMultimedia import QMediaPlayer, QMediaService, QAudioOutputSelectorControl
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaService, QAudioOutputSelectorControl, QMediaContent
 
 
-class Singleton(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+AUDIO_OUTPUT_SELECTOR_CONTROL_STRING = "org.qt-project.qt.audiooutputselectorcontrol/5.0"
+MIN_MAX_CONCURRENT_SOUNDS: int = 1
+MAX_MAX_CONCURRENT_SOUNDS: int = 10
 
 
-class PlayerPool(metaclass=Singleton):
-    AUDIO_OUTPUT_SELECTOR_CONTROL_STRING = "org.qt-project.qt.audiooutputselectorcontrol/5.0"
-    MIN_MAX_CONCURRENT_SOUNDS: int = 1
-    MAX_MAX_CONCURRENT_SOUNDS: int = 10
-
+class PlayerPool:
     def __init__(self, max_concurrent_sounds: int = 3):
         self._max_concurrent_sounds = self.max_concurrent_sounds = max_concurrent_sounds
         self._players = deque()
@@ -35,17 +27,17 @@ class PlayerPool(metaclass=Singleton):
     def max_concurrent_sounds(self, new_max_concurrent_sounds: int):
         """
         Set how many concurrent sounds can play at the same time.
-        Minimum value is 0 and maximum is 10.
+        Minimum value is 1 and maximum is 10.
         :raises ValueError: if new_max_concurrent_sounds is out of range
         """
-        if not self.MIN_MAX_CONCURRENT_SOUNDS <= new_max_concurrent_sounds <= self.MAX_MAX_CONCURRENT_SOUNDS:
+        if not MIN_MAX_CONCURRENT_SOUNDS <= new_max_concurrent_sounds <= MAX_MAX_CONCURRENT_SOUNDS:
             raise ValueError("Max concurrent sounds out of range.")
 
         difference = new_max_concurrent_sounds - self.max_concurrent_sounds
         if difference > 0:
             self._add_players(difference)
         elif difference < 0:
-            self._remove_players(abs(difference))
+            self._pop_players(abs(difference))
 
         self._max_concurrent_sounds = new_max_concurrent_sounds
 
@@ -61,7 +53,7 @@ class PlayerPool(metaclass=Singleton):
         for _ in range(number):
             self._players.append(QMediaPlayer())
 
-    def _remove_players(self, number: int):
+    def _pop_players(self, number: int):
         """Remove number of players from cache."""
         for _ in range(number):
             self._players.pop()
@@ -89,11 +81,13 @@ class PlayerPool(metaclass=Singleton):
         # When changing device output the change is propagated across all cached players,
         # so getting available outputs from any of them should always be the same, thus selecting first player
         # as at least one player will exist at all times.
-        selector = self._players[0].service().requestControl(self.AUDIO_OUTPUT_SELECTOR_CONTROL_STRING)
-        data = {}
+        selector = self._players[0].service().requestControl(AUDIO_OUTPUT_SELECTOR_CONTROL_STRING)
+        available_devices = {}
         for device_identifier in selector.availableOutputs():
-            data[selector.outputDescription(device_identifier)] = device_identifier
-        return data
+            friendly_device_name = selector.outputDescription(device_identifier)
+            available_devices[friendly_device_name] = device_identifier
+
+        return available_devices
 
     def change_device(self, device_friendly_name: str):
         """
@@ -108,10 +102,46 @@ class PlayerPool(metaclass=Singleton):
 
         for player in self._players:
             scv: QMediaService = player.service()
-            out: QAudioOutputSelectorControl = scv.requestControl(self.AUDIO_OUTPUT_SELECTOR_CONTROL_STRING)
+            out: QAudioOutputSelectorControl = scv.requestControl(AUDIO_OUTPUT_SELECTOR_CONTROL_STRING)
             out.setActiveOutput(device_identifier)
             scv.releaseControl(out)
 
     def stop_all_playbacks(self):
         for player in self._players:
             player.stop()
+
+
+class PlayerPoolManager:
+    """Manages having PLayerPool for multiple devices."""
+    def __init__(self, main_player_pool: PlayerPool, additional_player_pool: PlayerPool):
+        self._player_pools = (main_player_pool, additional_player_pool)
+
+    @property
+    def main_player_pool(self) -> PlayerPool:
+        return self._player_pools[0]
+
+    @property
+    def additional_player_pool(self) -> PlayerPool:
+        return self._player_pools[1]
+
+    def play(self, *, url: str, also_play_on_additional: bool):
+        main_content = QMediaContent(url)
+        main_player = self.main_player_pool.get_player()
+        main_player.setMedia(main_content)
+        main_player.play()
+
+        additional_content = QMediaContent(url)
+        additional_player = self.additional_player_pool.get_player()
+        additional_player.setMedia(additional_content)
+
+        main_player.play()
+        if also_play_on_additional:
+            additional_player.play()
+
+    def stop_all_playback(self):
+        for player_pool in self._player_pools:
+            player_pool.stop_all_playbacks()
+
+    def set_max_concurrent_sounds(self, max_concurrent_sounds: int):
+        for player_pool in self._player_pools:
+            player_pool.max_concurrent_sounds = max_concurrent_sounds

@@ -7,7 +7,7 @@ from typing import Type
 from pathlib import Path
 
 import keyboard
-from PyQt5 import uic, QtCore, QtMultimedia
+from PyQt5 import uic, QtCore
 from PyQt5.QtWidgets import (
     QMainWindow, QFormLayout, QGroupBox, qApp, QAction,
     QApplication, QMenu, QVBoxLayout, QSystemTrayIcon, QStyle
@@ -16,9 +16,9 @@ from PyQt5.QtWidgets import (
 import message_boxes
 from config import Config
 from settings import SettingsUi
+from add_hotkey import AddHotkeyUI
 from labels import HoverEntryLabel
-from player_pool import PlayerPool
-from hotkey_entry import HotkeyEntryUI
+from player_pool import PlayerPool, PlayerPoolManager
 from constants import GITHUB_REPO_LINK, PROGRAM_VERSION, POSSIBLE_AUDIO_FORMATS
 
 
@@ -37,6 +37,10 @@ class MainWindowUi(QMainWindow):
     DEFAULT_PROFILE_NAME = "default"
 
     def __init__(self):
+        # Register exception handler, at the very beginning so it doesn't miss any exceptions if we register it later
+        self._backup_excepthook = sys.excepthook
+        sys.excepthook = self._exception_hook
+
         super(MainWindowUi, self).__init__()
         uic.loadUi(self.LAYOUTS_DIRECTORY / "main_menu.ui", self)
         self.setFixedSize(self.size())
@@ -44,8 +48,10 @@ class MainWindowUi(QMainWindow):
         self.application_icon = QStyle.SP_TitleBarMenuButton
         self.setWindowIcon(qApp.style().standardIcon(self.application_icon))
 
-        self.settings_ui = SettingsUi()
-        self.add_hotkey_ui = HotkeyEntryUI(self)
+        self.player_pool_manager = PlayerPoolManager(PlayerPool(), PlayerPool())
+
+        self.settings_ui = SettingsUi(self.player_pool_manager)
+        self.add_hotkey_ui = AddHotkeyUI(self)
 
         self.menu_settings.triggered.connect(self.settings_ui.show)
         self.menu_help.triggered.connect(self.on_menu_help_click)
@@ -66,10 +72,6 @@ class MainWindowUi(QMainWindow):
         self.refresh_hotkeys()
         self.hotkey_listener_worker = HotkeyListenerThread()
         self.hotkey_listener_worker.start()
-
-        # Register exception handler
-        self._backup_excepthook = sys.excepthook
-        sys.excepthook = self._exception_hook
 
         self.show()
 
@@ -127,7 +129,8 @@ class MainWindowUi(QMainWindow):
 
     @QtCore.pyqtSlot()
     def on_button_load_profile_click(self):
-        PlayerPool().stop_all_playbacks()
+        self.player_pool_manager.stop_all_playback()
+
         selected_profile = self.combo_box_profile.currentText()
         self.profile = self.load_profile_json(selected_profile)
         self.clear_scroll_area()
@@ -141,7 +144,8 @@ class MainWindowUi(QMainWindow):
         if not profile_name:
             return message_boxes.show_simple_warning_message("Can't create profile with empty name!")
 
-        PlayerPool().stop_all_playbacks()
+        self.player_pool_manager.stop_all_playback()
+
         self.profile = {}
         self.combo_box_profile.insertItem(0, profile_name)
         self.combo_box_profile.setCurrentIndex(0)
@@ -164,8 +168,7 @@ class MainWindowUi(QMainWindow):
     def hotkey_entry_right_click(self, _label: HoverEntryLabel):
         message_boxes.show_simple_info_message("Editing not yet implemented.")  # TODO
 
-    @classmethod
-    def play_sound(cls, sound_path: str):
+    def play_sound(self, sound_path: str):
         path = Path(sound_path)
         if path.is_dir():
             files = [file for file in path.rglob("**/*") if file.is_file() and file.suffix in POSSIBLE_AUDIO_FORMATS]
@@ -174,10 +177,10 @@ class MainWindowUi(QMainWindow):
         else:
             url = QtCore.QUrl.fromLocalFile(QtCore.QDir.current().absoluteFilePath(sound_path))
 
-        player = PlayerPool().get_player()
-        content = QtMultimedia.QMediaContent(url)
-        player.setMedia(content)
-        player.play()
+        self.player_pool_manager.play(
+            url=url,
+            also_play_on_additional=self.settings_ui.check_enable_additional_playback_device.isChecked()
+        )
 
     @QtCore.pyqtSlot()
     def on_menu_help_click(self):
