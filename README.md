@@ -19,13 +19,21 @@ In Ubuntu, Mint and Debian you can install Python 3 like this:
 
     $ sudo apt-get install python3 python3-pip
 
-For other Linux flavors, macOS and Windows, packages are available at
+For other Linux flavors, macOS and Windows, packages are available at http://www.python.org/getit/
 
-  http://www.python.org/getit/
- 
-Aside from Python you also need PyQt5 which you can install from requirements:
 
-    $ pip install -r requirements.txt
+This project uses [Pipenv](https://realpython.com/pipenv-guide/) packaging.
+
+If you don't already have pipenv installed, install it in global environment:
+
+    $ pip install pipenv
+
+Then install dependencies:
+
+    $ cd mc_fart_mic
+    $ pipenv install
+
+Above commands will set up new environment with required dependencies.
 
 
 To actually play sound to your microphone (or any **input** device) you need to have third party software driver.
@@ -110,4 +118,3 @@ Any sort of contribution/discussion is welcome - see the [CONTRIBUTING.md](CONTR
 ## License
 
 This project is licensed under the GPLv3 License - see the [LICENSE.md](LICENSE.md) file for details.
-
